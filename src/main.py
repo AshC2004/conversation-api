@@ -3,6 +3,8 @@
 from fastapi import FastAPI
 
 from src.auth.routes import router as auth_router
+from src.conversations.routes import router as conversations_router
+from src.messages.routes import router as messages_router
 from src.config.cors import SecurityHeadersMiddleware, configure_cors
 from src.middleware.error_handler import register_error_handlers
 from src.middleware.rate_limiter import RateLimiterMiddleware
@@ -29,6 +31,8 @@ register_error_handlers(app)
 
 # --- Routes ---
 app.include_router(auth_router)
+app.include_router(conversations_router)
+app.include_router(messages_router)
 
 
 @app.get("/health", tags=["Health"])

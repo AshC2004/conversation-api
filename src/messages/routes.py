@@ -1,6 +1,7 @@
 """Message endpoints: list, send, stream, events."""
 
 import asyncio
+import json
 import logging
 import time
 import uuid
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/conversations/{conversation_id}", tags=["Messages"])
 
 
-@router.get("/messages")
+@router.get("/messages", summary="List messages", description="List messages in a conversation, paginated, ordered by creation time.")
 async def list_messages(
     conversation_id: str,
     page: int = Query(1, ge=1),
@@ -61,7 +62,7 @@ async def list_messages(
     return MessageListResponse(data=result.data, page=page, per_page=per_page, total=total)
 
 
-@router.post("/messages")
+@router.post("/messages", summary="Send a message", description="Send a message and get the LLM response. Supports optional model override and thinking mode.", tags=["Messages"])
 async def send(
     conversation_id: str,
     body: SendMessageRequest,
@@ -75,7 +76,7 @@ async def send(
     return {"status": "success", "data": assistant_msg}
 
 
-@router.post("/messages/stream")
+@router.post("/messages/stream", summary="Stream a message response", description="Send a message and receive the LLM response as Server-Sent Events (SSE) with token-by-token delivery.", tags=["Streaming"])
 async def stream(
     conversation_id: str,
     body: SendMessageRequest,
@@ -87,7 +88,7 @@ async def stream(
     model = body.model or conv.get("model") or settings.DEFAULT_MODEL
 
     # Save user message
-    user_msg = _save_message(
+    _save_message(
         conversation_id, "user", body.content,
         token_count=count_tokens(body.content),
     )
@@ -163,7 +164,7 @@ async def stream(
     )
 
 
-@router.get("/events")
+@router.get("/events", summary="Conversation events stream", description="SSE stream that emits new_message events in real-time as messages are added to the conversation.", tags=["Streaming"])
 async def events(
     conversation_id: str,
     request: Request,
@@ -188,7 +189,6 @@ async def events(
                     .limit(current_count - last_count)
                     .execute()
                 )
-                import json
                 for msg in reversed(new_msgs.data):
                     yield f"event: new_message\ndata: {json.dumps(msg, default=str)}\n\n"
                 last_count = current_count

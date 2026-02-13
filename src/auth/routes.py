@@ -52,7 +52,7 @@ def _token_pair(user_id: str, email: str) -> dict:
 
 # --- Endpoints ---
 
-@router.post("/register", status_code=201, response_model=TokenResponse)
+@router.post("/register", status_code=201, response_model=TokenResponse, summary="Register a new user", description="Create a new user account and return JWT tokens.")
 async def register(body: RegisterRequest):
     db = get_supabase()
 
@@ -84,7 +84,7 @@ async def register(body: RegisterRequest):
     return TokenResponse(data=tokens)
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, summary="Login", description="Authenticate with email and password, returns JWT access and refresh tokens.")
 async def login(body: LoginRequest):
     db = get_supabase()
 
@@ -108,7 +108,7 @@ async def login(body: LoginRequest):
     return TokenResponse(data=tokens)
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh", response_model=TokenResponse, summary="Refresh access token", description="Exchange a valid refresh token for a new token pair. Old refresh token is revoked.")
 async def refresh(body: RefreshRequest):
     # Verify the refresh token JWT
     try:
@@ -147,7 +147,7 @@ async def refresh(body: RefreshRequest):
     return TokenResponse(data=tokens)
 
 
-@router.post("/logout")
+@router.post("/logout", summary="Logout", description="Revoke the refresh token. Requires a valid access token.")
 async def logout(body: RefreshRequest, user: CurrentUser = Depends(get_current_user)):
     db = get_supabase()
     token_hash = _hash_refresh_token(body.refresh_token)

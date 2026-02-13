@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import time
-import uuid
 
 from src.config.settings import get_settings
 from src.db.client import get_supabase
@@ -12,6 +11,7 @@ from src.llm.client import get_llm_client
 from src.llm.context import build_context
 from src.llm.prompts import TITLE_GENERATION_PROMPT, build_system_prompt
 from src.llm.token_counter import count_tokens
+from src.utils.cost_tracker import log_cost
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ async def send_message(
     model = model or conversation.get("model") or settings.DEFAULT_MODEL
 
     # Save user message
-    user_msg = _save_message(
+    _save_message(
         conversation_id, "user", content,
         token_count=count_tokens(content),
     )
@@ -104,14 +104,19 @@ async def send_message(
 
     latency_ms = int((time.time() - start) * 1000)
 
+    # Log cost
+    input_tokens = result.get("input_tokens", 0)
+    output_tokens = result.get("output_tokens", 0)
+    cost = log_cost(input_tokens, output_tokens, model)
+
     # Save assistant message
     assistant_msg = _save_message(
         conversation_id, "assistant", result["content"],
-        token_count=result.get("output_tokens", 0),
+        token_count=output_tokens,
         model=model,
         finish_reason=result.get("finish_reason", "stop"),
         latency_ms=latency_ms,
-        metadata={"input_tokens": result.get("input_tokens", 0)},
+        metadata={"input_tokens": input_tokens, "cost_usd": cost},
     )
 
     return assistant_msg

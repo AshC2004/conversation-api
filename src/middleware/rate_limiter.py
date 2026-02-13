@@ -3,7 +3,7 @@
 import time
 from collections import defaultdict
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
@@ -59,7 +59,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
             allowed, retry_after = self._check_limit(self._ai_windows[user_id], settings.RATE_LIMIT_AI, now)
             if not allowed:
                 return Response(
-                    content=f'{{"status":"error","error":{{"type":"rate_limit","message":"AI generation rate limit exceeded"}}}}',
+                    content='{"status":"error","error":{"type":"rate_limit","message":"AI generation rate limit exceeded"}}',
                     status_code=429,
                     headers={"Retry-After": str(retry_after), "Content-Type": "application/json"},
                 )
@@ -68,7 +68,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         allowed, retry_after = self._check_limit(self._standard_windows[user_id], settings.RATE_LIMIT_STANDARD, now)
         if not allowed:
             return Response(
-                content=f'{{"status":"error","error":{{"type":"rate_limit","message":"Rate limit exceeded"}}}}',
+                content='{"status":"error","error":{"type":"rate_limit","message":"Rate limit exceeded"}}',
                 status_code=429,
                 headers={"Retry-After": str(retry_after), "Content-Type": "application/json"},
             )

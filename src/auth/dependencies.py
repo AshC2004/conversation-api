@@ -4,7 +4,7 @@ import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import HTTPException, Request
 
 from src.auth.jwt import verify_token
 from src.db.client import get_supabase
